@@ -1,0 +1,1677 @@
+{
+	"info": {
+		"_postman_id": "items-api-collection",
+		"name": "Items API - Расширенное тестирование",
+		"description": "Полная коллекция тестов для Items REST API с PostgreSQL\n\nВключает:\n- Успешные сценарии (Happy Path)\n- Валидационные тесты\n- Граничные случаи\n- Негативные тесты\n- Тесты производительности\n- Тесты персистентности PostgreSQL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Успешные сценарии (Happy Path)",
+			"item": [
+				{
+					"name": "POST - Создать элемент с полными данными",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has required fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData.name).to.eql('Тестовый элемент');",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"});",
+									"",
+									"pm.test(\"ID is positive number\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.be.a('number');",
+									"    pm.expect(jsonData.id).to.be.above(0);",
+									"});",
+									"",
+									"// Сохраняем ID для последующих тестов",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"created_item_id\", pm.response.json().id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Тестовый элемент\",\n    \"description\": \"Описание тестового элемента\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "POST - Создать элемент без описания",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Description is null\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.description).to.be.null;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Элемент без описания\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "GET - Получить все элементы",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 500ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "GET - Получить элемент по ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has all fields\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"});",
+									"",
+									"pm.test(\"ID matches requested ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(parseInt(pm.variables.get('created_item_id')));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/{{created_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{created_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Обновить элемент полностью",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Name is updated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.name).to.eql('Обновленное имя');",
+									"});",
+									"",
+									"pm.test(\"Description is updated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.description).to.eql('Обновленное описание');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Обновленное имя\",\n    \"description\": \"Обновленное описание\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/{{created_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{created_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Обновить только имя",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Only name is updated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.name).to.eql('Только имя обновлено');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Только имя обновлено\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/{{created_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{created_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Обновить только описание",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Only description is updated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.description).to.eql('Только описание обновлено');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Только описание обновлено\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/{{created_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{created_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "DELETE - Удалить элемент",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"Response body is empty\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/{{created_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{created_item_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. GET /items - Пагинация и фильтрация",
+			"item": [
+				{
+					"name": "GET - С параметром limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns max 5 items\", function () {",
+									"    pm.expect(pm.response.json().length).to.be.at.most(5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=5",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - С параметром offset",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?offset=2",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "offset",
+									"value": "2"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - С limit и offset",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=3&offset=1",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "3"
+								},
+								{
+									"key": "offset",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - С фильтром по имени",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"All items contain filter string\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(item) {",
+									"        pm.expect(item.name.toLowerCase()).to.include('элемент');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?name=элемент",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "name",
+									"value": "элемент"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - Фильтр регистронезависимый",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?name=ЭЛЕМЕНТ",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "name",
+									"value": "ЭЛЕМЕНТ"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - С пустым фильтром (должен вернуть все)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns all items when filter is empty\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    // Пустой фильтр должен вернуть все элементы",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?name=",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "name",
+									"value": ""
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Валидационные ошибки (422)",
+			"item": [
+				{
+					"name": "POST - Пустое имя (min_length=1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});",
+									"",
+									"pm.test(\"Error message mentions name field\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var errorStr = JSON.stringify(jsonData);",
+									"    pm.expect(errorStr.toLowerCase()).to.include('name');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"description\": \"Тест пустого имени\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "POST - Отсутствует поле name",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Тест без имени\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "POST - Неправильный тип данных (name как число)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": 12345,\n    \"description\": \"Тест\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "GET - limit меньше 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=0",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "0"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - limit больше 100",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=101",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "101"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - offset отрицательный",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?offset=-1",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "offset",
+									"value": "-1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - ID равен 0",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/0",
+							"host": ["{{base_url}}"],
+							"path": ["items", "0"]
+						}
+					}
+				},
+				{
+					"name": "GET - ID отрицательный",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/-1",
+							"host": ["{{base_url}}"],
+							"path": ["items", "-1"]
+						}
+					}
+				},
+				{
+					"name": "GET - ID не число",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/abc",
+							"host": ["{{base_url}}"],
+							"path": ["items", "abc"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Пустое имя при обновлении",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 422\", function () {",
+									"    pm.response.to.have.status(422);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/1",
+							"host": ["{{base_url}}"],
+							"path": ["items", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Ошибки 404 (Не найдено)",
+			"item": [
+				{
+					"name": "GET - Несуществующий элемент",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Error message contains 'not found'\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var errorStr = JSON.stringify(jsonData).toLowerCase();",
+									"    pm.expect(errorStr).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/99999",
+							"host": ["{{base_url}}"],
+							"path": ["items", "99999"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Обновление несуществующего элемента",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Тест\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/99999",
+							"host": ["{{base_url}}"],
+							"path": ["items", "99999"]
+						}
+					}
+				},
+				{
+					"name": "DELETE - Удаление несуществующего элемента",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/99999",
+							"host": ["{{base_url}}"],
+							"path": ["items", "99999"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Граничные случаи",
+			"item": [
+				{
+					"name": "GET - limit = 1 (минимум)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns at most 1 item\", function () {",
+									"    pm.expect(pm.response.json().length).to.be.at.most(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=1",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - limit = 100 (максимум)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=100",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - offset больше количества элементов",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns empty array\", function () {",
+									"    pm.expect(pm.response.json()).to.be.an('array').that.is.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?offset=10000",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "offset",
+									"value": "10000"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "POST - Очень длинное имя",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Очень длинное название элемента которое содержит много символов и должно быть обработано корректно системой\",\n    \"description\": \"Тест длинного имени\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "POST - Специальные символы в имени",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Special characters are preserved\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.name).to.include('&');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Элемент & Test < > \\\" ' \",\n    \"description\": \"Специальные символы\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "POST - Эмодзи в имени",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Элемент 🚀 Тест ✅\",\n    \"description\": \"С эмодзи\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Пустое тело (должен вернуть 200, но ничего не изменит)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/1",
+							"host": ["{{base_url}}"],
+							"path": ["items", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Производительность и нагрузка",
+			"item": [
+				{
+					"name": "GET - Проверка времени ответа",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response time is less than 1000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "POST - Множественное создание (для нагрузки)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Элемент для нагрузки\",\n    \"description\": \"Тест производительности\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "7. Тестирование PostgreSQL (Персистентность данных)",
+			"item": [
+				{
+					"name": "POST - Создать элемент для проверки персистентности",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Item created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData.name).to.eql('Элемент для проверки персистентности');",
+									"    pm.collectionVariables.set('persistent_item_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Элемент для проверки персистентности\",\n    \"description\": \"Этот элемент должен сохраниться в PostgreSQL после перезапуска сервера\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "GET - Проверить что элемент сохранился в БД",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Item persisted in database\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(parseInt(pm.collectionVariables.get('persistent_item_id')));",
+									"    pm.expect(jsonData.name).to.eql('Элемент для проверки персистентности');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/{{persistent_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{persistent_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "POST - Создать несколько элементов для проверки последовательности ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"ID is sequential\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var currentId = jsonData.id;",
+									"    var lastId = pm.collectionVariables.get('last_created_id');",
+									"    if (lastId) {",
+									"        pm.expect(currentId).to.be.above(parseInt(lastId));",
+									"    }",
+									"    pm.collectionVariables.set('last_created_id', currentId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Элемент для проверки последовательности ID\",\n    \"description\": \"Проверка автоинкремента в PostgreSQL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "GET - Проверить что все элементы сохраняются в БД",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"All items are persisted\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.above(0);",
+									"});",
+									"",
+									"pm.test(\"Items have valid structure\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    jsonData.forEach(function(item) {",
+									"        pm.expect(item).to.have.property('id');",
+									"        pm.expect(item).to.have.property('name');",
+									"        pm.expect(item).to.have.property('description');",
+									"        pm.expect(item.id).to.be.a('number');",
+									"        pm.expect(item.name).to.be.a('string');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items",
+							"host": ["{{base_url}}"],
+							"path": ["items"]
+						}
+					}
+				},
+				{
+					"name": "PUT - Обновить элемент и проверить что изменения сохраняются",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Update persisted in database\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.name).to.eql('Обновленный элемент из БД');",
+									"    pm.expect(jsonData.description).to.eql('Изменения должны сохраниться в PostgreSQL');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Обновленный элемент из БД\",\n    \"description\": \"Изменения должны сохраниться в PostgreSQL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/items/{{persistent_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{persistent_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "GET - Проверить что обновление сохранилось после запроса",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Update is persistent\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.name).to.eql('Обновленный элемент из БД');",
+									"    pm.expect(jsonData.description).to.eql('Изменения должны сохраниться в PostgreSQL');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/{{persistent_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{persistent_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "DELETE - Удалить элемент и проверить что удаление сохранилось",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/{{persistent_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{persistent_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "GET - Проверить что элемент действительно удален из БД",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Item is permanently deleted from database\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var errorStr = JSON.stringify(jsonData).toLowerCase();",
+									"    pm.expect(errorStr).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items/{{persistent_item_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["items", "{{persistent_item_id}}"]
+						}
+					}
+				},
+				{
+					"name": "GET - Проверить работу фильтрации с БД",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Filter works with database\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    jsonData.forEach(function(item) {",
+									"        pm.expect(item.name.toLowerCase()).to.include('проверки');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?name=проверки",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "name",
+									"value": "проверки"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "GET - Проверить пагинацию с БД",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Pagination works with database\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.at.most(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/items?limit=2&offset=0",
+							"host": ["{{base_url}}"],
+							"path": ["items"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "2"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "created_item_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "persistent_item_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "last_created_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

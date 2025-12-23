@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: items-api-db
+    environment:
+      - POSTGRES_USER=items_user
+      - POSTGRES_PASSWORD=items_password
+      - POSTGRES_DB=items_db
+      - TZ=Europe/Moscow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U items_user -d items_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: items-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Монтируем код для hot reload
+      - ./main.py:/app/main.py
+      - ./schemas.py:/app/schemas.py
+      - ./storage.py:/app/storage.py
+      - ./database.py:/app/database.py
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=DEBUG
+      - TZ=Europe/Moscow
+      - DATABASE_URL=postgresql+asyncpg://items_user:items_password@db:5432/items_db
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Автоматическая пересборка при изменении файлов
+    develop:
+      watch:
+        # Пересборка образа при изменении Dockerfile
+        - action: rebuild
+          path: ./Dockerfile
+        # Пересборка образа при изменении requirements.txt
+        - action: rebuild
+          path: ./requirements.txt
+        # Синхронизация изменений Python файлов (hot reload через uvicorn --reload)
+        - action: sync
+          path: ./main.py
+          target: /app/main.py
+        - action: sync
+          path: ./schemas.py
+          target: /app/schemas.py
+        - action: sync
+          path: ./storage.py
+          target: /app/storage.py
+        - action: sync
+          path: ./database.py
+          target: /app/database.py
+
+volumes:
+  postgres_data:
+

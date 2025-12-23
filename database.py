@@ -14,7 +14,7 @@ class Base(DeclarativeBase):
 
 
 class ItemModel(Base):
-    """Модель для таблицы items в PostgreSQL"""
+    """модель для таблицы items в postgresql"""
     __tablename__ = "items"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -22,22 +22,22 @@ class ItemModel(Base):
     description = Column(Text, nullable=True)
 
 
-# Получаем URL базы данных из переменной окружения
+# получаем url базы данных из переменной окружения
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql+asyncpg://items_user:items_password@localhost:5432/items_db"
 )
 
-# Создаем асинхронный движок SQLAlchemy
+
 engine = create_async_engine(
     DATABASE_URL,
-    echo=False,  # Установите True для отладки SQL запросов
-    pool_pre_ping=True,  # Проверка соединения перед использованием
+    echo=False,
+    pool_pre_ping=True,
     pool_size=10,
     max_overflow=20
 )
 
-# Создаем фабрику сессий
+# создаем фабрику сессий
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
@@ -46,62 +46,61 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def get_db() -> AsyncSession:
-    """Dependency для получения сессии БД"""
-    logger.debug("🔌 [DATABASE] Создание новой сессии базы данных...")
+    """dependency для получения сессии бд"""
+    logger.debug("[database] создание новой сессии базы данных...")
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            logger.debug("💾 [DATABASE] Коммит транзакции...")
+            logger.debug("[database] коммит транзакции...")
             await session.commit()
-            logger.debug("✅ [DATABASE] Транзакция успешно закоммичена")
+            logger.debug("[database] транзакция успешно закоммичена")
         except Exception as e:
             logger.error(
-                f"❌ [DATABASE] Ошибка в транзакции, выполнение rollback | "
-                f"Ошибка: {str(e)}"
+                f"[database] ошибка в транзакции, выполнение rollback | "
+                f"ошибка: {str(e)}"
             )
             await session.rollback()
             raise
         finally:
-            logger.debug("🔌 [DATABASE] Закрытие сессии базы данных")
+            logger.debug("[database] закрытие сессии базы данных")
             await session.close()
 
 
 async def init_db():
-    """Инициализация базы данных - создание таблиц"""
+    """инициализация базы данных - создание таблиц"""
     try:
         db_url_display = (
             DATABASE_URL.split('@')[1]
             if '@' in DATABASE_URL else 'скрыт'
         )
         logger.info(
-            f"🔌 [DATABASE] Инициализация базы данных | "
+            f"[database] инициализация базы данных | "
             f"URL: {db_url_display}"
         )
         logger.debug(
-            "🔌 [DATABASE] Проверка подключения к базе данных..."
+            "[database] проверка подключения к базе данных..."
         )
         async with engine.begin() as conn:
             logger.debug(
-                "🔌 [DATABASE] Создание таблиц "
+                "[database] создание таблиц "
                 "(если не существуют)..."
             )
             await conn.run_sync(Base.metadata.create_all)
         logger.info(
-            "✅ [DATABASE] База данных инициализирована успешно | "
-            "Таблицы созданы/проверены"
+            "[database] база данных инициализирована успешно | "
         )
     except Exception as e:
         import traceback
         logger.error(
-            f"❌ [DATABASE] Критическая ошибка при инициализации БД | "
-            f"Ошибка: {str(e)}"
+            f"[database] критическая ошибка при инициализации бд | "
+            f"ошибка: {str(e)}"
         )
         logger.debug(f"Traceback: {traceback.format_exc()}")
         raise
 
 
 async def close_db():
-    """Закрытие соединений с базой данных"""
-    logger.info("🔌 [DATABASE] Закрытие всех соединений с базой данных...")
+    """закрытие соединений с базой данных"""
+    logger.info("[database] закрытие всех соединений с базой данных...")
     await engine.dispose()
-    logger.info("✅ [DATABASE] Все соединения с базой данных успешно закрыты")
+    logger.info("[database] все соединения с базой данных успешно закрыты")

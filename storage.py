@@ -6,16 +6,16 @@ from database import ItemModel
 
 
 async def get_all_items(db: AsyncSession) -> list[ItemResponse]:
-    """Получить все элементы из базы данных"""
+    """получить все элементы из базы данных"""
     try:
         logger.debug(
-            "💾 [STORAGE] Выполнение SQL запроса: "
-            "SELECT * FROM items ORDER BY id"
+            "[storage] выполнение sql запроса: "
+            "select * from items order by id"
         )
         result = await db.execute(select(ItemModel).order_by(ItemModel.id))
         items = result.scalars().all()
 
-        logger.debug(f"💾 [STORAGE] Получено {len(items)} записей из БД")
+        logger.debug(f"[storage] получено {len(items)} записей из бд")
 
         items_list = [
             ItemResponse(
@@ -26,14 +26,14 @@ async def get_all_items(db: AsyncSession) -> list[ItemResponse]:
             for item in items
         ]
         logger.info(
-            f"✅ [STORAGE] Успешно получено {len(items_list)} "
+            f"[storage] успешно получено {len(items_list)} "
             f"элементов из базы данных"
         )
         return items_list
     except Exception as e:
         import traceback
         logger.error(
-            f"❌ [STORAGE] Ошибка при получении всех элементов: {str(e)}"
+            f"[storage] ошибка при получении всех элементов: {str(e)}"
         )
         logger.debug(f"Traceback: {traceback.format_exc()}")
         raise
@@ -42,11 +42,11 @@ async def get_all_items(db: AsyncSession) -> list[ItemResponse]:
 async def get_item_by_id(
     db: AsyncSession, item_id: int
 ) -> ItemResponse | None:
-    """Получить элемент по ID из базы данных"""
+    """получить элемент по id из базы данных"""
     try:
         logger.debug(
-            f"💾 [STORAGE] Выполнение SQL запроса: "
-            f"SELECT * FROM items WHERE id = {item_id}"
+            f"[storage] выполнение sql запроса: "
+            f"select * from items where id = {item_id}"
         )
         result = await db.execute(
             select(ItemModel).where(ItemModel.id == item_id)
@@ -56,7 +56,7 @@ async def get_item_by_id(
         if item:
             desc = item.description if item.description else 'нет'
             logger.info(
-                f"✅ [STORAGE] Элемент с ID {item_id} найден | "
+                f"[storage] элемент с id {item_id} найден | "
                 f"name='{item.name}' | "
                 f"description='{desc}'"
             )
@@ -67,14 +67,14 @@ async def get_item_by_id(
             )
         else:
             logger.warning(
-                f"⚠️ [STORAGE] Элемент с ID {item_id} "
+                f"[storage] элемент с id {item_id} "
                 f"не найден в базе данных"
             )
             return None
     except Exception as e:
         import traceback
         logger.error(
-            f"❌ [STORAGE] Ошибка при получении элемента "
+            f"[storage] ошибка при получении элемента "
             f"по ID {item_id}: {str(e)}"
         )
         logger.debug(f"Traceback: {traceback.format_exc()}")
@@ -82,11 +82,11 @@ async def get_item_by_id(
 
 
 async def create_item(db: AsyncSession, item: ItemCreate) -> ItemResponse:
-    """Создать новый элемент в базе данных"""
+    """создать новый элемент в базе данных"""
     try:
         item_desc = item.description if item.description else 'нет'
         logger.debug(
-            f"💾 [STORAGE] Создание нового элемента в БД | "
+            f"[storage] создание нового элемента в бд | "
             f"name='{item.name}' | "
             f"description='{item_desc}'"
         )
@@ -97,13 +97,13 @@ async def create_item(db: AsyncSession, item: ItemCreate) -> ItemResponse:
         )
         db.add(new_item_db)
         logger.debug(
-            "💾 [STORAGE] Элемент добавлен в сессию, "
+            "[storage] элемент добавлен в сессию, "
             "выполнение flush..."
         )
         await db.flush()
         await db.refresh(new_item_db)
         logger.debug(
-            f"💾 [STORAGE] Элемент сохранен, "
+            f"[storage] элемент сохранен, "
             f"получен ID: {new_item_db.id}"
         )
 
@@ -118,7 +118,7 @@ async def create_item(db: AsyncSession, item: ItemCreate) -> ItemResponse:
             if created_item.description else 'нет'
         )
         logger.info(
-            f"✅ [STORAGE] Новый элемент создан в БД | "
+            f"[storage] новый элемент создан в бд | "
             f"ID={created_item.id} | "
             f"name='{created_item.name}' | "
             f"description='{created_desc}'"
@@ -127,7 +127,7 @@ async def create_item(db: AsyncSession, item: ItemCreate) -> ItemResponse:
     except Exception as e:
         import traceback
         logger.error(
-            f"❌ [STORAGE] Ошибка при создании элемента: {str(e)}"
+            f"[storage] ошибка при создании элемента: {str(e)}"
         )
         logger.debug(f"Traceback: {traceback.format_exc()}")
         raise
@@ -136,10 +136,10 @@ async def create_item(db: AsyncSession, item: ItemCreate) -> ItemResponse:
 async def update_item(
     db: AsyncSession, item_id: int, item: ItemUpdate
 ) -> ItemResponse | None:
-    """Обновить элемент в базе данных"""
+    """обновить элемент в базе данных"""
     try:
         logger.debug(
-            f"💾 [STORAGE] Поиск элемента ID={item_id} "
+            f"[storage] поиск элемента id={item_id} "
             f"для обновления..."
         )
         result = await db.execute(
@@ -149,7 +149,7 @@ async def update_item(
 
         if existing_item_db is None:
             logger.warning(
-                f"⚠️ [STORAGE] Попытка обновить несуществующий "
+                f"[storage] попытка обновить несуществующий "
                 f"элемент с ID {item_id}"
             )
             return None
@@ -159,29 +159,29 @@ async def update_item(
             if existing_item_db.description else 'нет'
         )
         logger.info(
-            f"💾 [STORAGE] Элемент найден | "
+            f"[storage] элемент найден | "
             f"ID={item_id} | "
-            f"Текущие данные: name='{existing_item_db.name}', "
+            f"текущие данные: name='{existing_item_db.name}', "
             f"description='{existing_desc}'"
         )
 
-        # Обновляем только переданные поля
+        # обновляем только переданные поля
         update_data = item.model_dump(exclude_unset=True)
         logger.debug(
-            f"💾 [STORAGE] Обновление полей: "
+            f"[storage] обновление полей: "
             f"{list(update_data.keys())} | "
-            f"Новые значения: {update_data}"
+            f"новые значения: {update_data}"
         )
 
         for field, value in update_data.items():
             old_value = getattr(existing_item_db, field)
             setattr(existing_item_db, field, value)
             logger.debug(
-                f"💾 [STORAGE] Поле '{field}' обновлено: "
+                f"[storage] поле '{field}' обновлено: "
                 f"'{old_value}' -> '{value}'"
             )
 
-        logger.debug("💾 [STORAGE] Сохранение изменений в БД (flush)...")
+        logger.debug("[storage] сохранение изменений в бд (flush)...")
         await db.flush()
         await db.refresh(existing_item_db)
 
@@ -196,16 +196,16 @@ async def update_item(
             if updated_item.description else 'нет'
         )
         logger.info(
-            f"✅ [STORAGE] Элемент ID={item_id} обновлен | "
-            f"Новые данные: name='{updated_item.name}', "
+            f"[storage] элемент id={item_id} обновлен | "
+            f"новые данные: name='{updated_item.name}', "
             f"description='{updated_desc}' | "
-            f"Обновленные поля: {list(update_data.keys())}"
+            f"обновленные поля: {list(update_data.keys())}"
         )
         return updated_item
     except Exception as e:
         import traceback
         logger.error(
-            f"❌ [STORAGE] Ошибка при обновлении элемента "
+            f"[storage] ошибка при обновлении элемента "
             f"ID {item_id}: {str(e)}"
         )
         logger.debug(f"Traceback: {traceback.format_exc()}")
@@ -213,13 +213,13 @@ async def update_item(
 
 
 async def delete_item(db: AsyncSession, item_id: int) -> bool:
-    """Удалить элемент из базы данных"""
+    """удалить элемент из базы данных"""
     try:
         logger.debug(
-            f"💾 [STORAGE] Поиск элемента ID={item_id} "
+            f"[storage] поиск элемента id={item_id} "
             f"для удаления..."
         )
-        # Сначала получаем элемент для логирования
+        # сначала получаем элемент для логирования
         result = await db.execute(
             select(ItemModel).where(ItemModel.id == item_id)
         )
@@ -227,37 +227,37 @@ async def delete_item(db: AsyncSession, item_id: int) -> bool:
 
         if item_db is None:
             logger.warning(
-                f"⚠️ [STORAGE] Попытка удалить несуществующий "
+                f"[storage] попытка удалить несуществующий "
                 f"элемент с ID {item_id}"
             )
             return False
 
         item_name = item_db.name
         logger.info(
-            f"💾 [STORAGE] Элемент найден для удаления | "
+            f"[storage] элемент найден для удаления | "
             f"ID={item_id} | name='{item_name}'"
         )
 
-        # Удаляем элемент
+        # удаляем элемент
         logger.debug(
-            f"💾 [STORAGE] Выполнение SQL: "
-            f"DELETE FROM items WHERE id = {item_id}"
+            f"[storage] выполнение sql: "
+            f"delete from items where id = {item_id}"
         )
         await db.execute(
             delete(ItemModel).where(ItemModel.id == item_id)
         )
         await db.flush()
-        logger.debug("💾 [STORAGE] Элемент удален из БД (flush выполнен)")
+        logger.debug("[storage] элемент удален из бд (flush выполнен)")
 
         logger.info(
-            f"✅ [STORAGE] Элемент удален из базы данных | "
+            f"[storage] элемент удален из базы данных | "
             f"ID={item_id} | name='{item_name}'"
         )
         return True
     except Exception as e:
         import traceback
         logger.error(
-            f"❌ [STORAGE] Ошибка при удалении элемента ID {item_id}: {str(e)}"
+            f"[storage] ошибка при удалении элемента id {item_id}: {str(e)}"
         )
         logger.debug(f"Traceback: {traceback.format_exc()}")
         raise
